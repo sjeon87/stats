@@ -125,7 +125,12 @@ class IntervalRateCollector : public DataCollectionObject
          * The sum of the received inputs, divided by the number of input samples.
          * Equals to `-nan` if there is no input sample received.
          */
-        OUTPUT_TYPE_AVERAGE_PER_SAMPLE
+        OUTPUT_TYPE_AVERAGE_PER_SAMPLE,
+        /**
+         * The sum of the received inputs, divided by the time difference between
+         * the last received input sample and the first received input sample.
+         */
+        OUTPUT_TYPE_AVERAGE_PER_SECOND
     } OutputType_t;
 
     /**

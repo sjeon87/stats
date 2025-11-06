@@ -65,6 +65,8 @@ IntervalRateCollector::GetOutputTypeName(IntervalRateCollector::OutputType_t out
         return "OUTPUT_TYPE_NUMBER_OF_SAMPLE";
     case IntervalRateCollector::OUTPUT_TYPE_AVERAGE_PER_SAMPLE:
         return "OUTPUT_TYPE_AVERAGE_PER_SAMPLE";
+    case IntervalRateCollector::OUTPUT_TYPE_AVERAGE_PER_SECOND:
+        return "OUTPUT_TYPE_AVERAGE_PER_SECOND";
     default:
         return "";
     }
@@ -145,7 +147,9 @@ IntervalRateCollector::GetTypeId()
                                           IntervalRateCollector::OUTPUT_TYPE_NUMBER_OF_SAMPLE,
                                           "NUMBER_OF_SAMPLE",
                                           IntervalRateCollector::OUTPUT_TYPE_AVERAGE_PER_SAMPLE,
-                                          "AVERAGE_PER_SAMPLE"))
+                                          "AVERAGE_PER_SAMPLE",
+                                          IntervalRateCollector::OUTPUT_TYPE_AVERAGE_PER_SECOND,
+                                          "AVERAGE_PER_SECOND"))
             .AddAttribute("TimeUnit",
                           "Determines the unit used for the time output (i.e., the "
                           "`OutputWithTime` trace source",
@@ -233,6 +237,11 @@ IntervalRateCollector::DoDispose()
         case IntervalRateCollector::OUTPUT_TYPE_AVERAGE_PER_SAMPLE:
             // This may produce -nan if number of sample is zero.
             m_outputOverall(sum / static_cast<double>(m_overallNumOfSamples));
+            break;
+
+        // TODO what is this ????
+        case IntervalRateCollector::OUTPUT_TYPE_AVERAGE_PER_SECOND:
+            m_outputOverall(sum / m_intervalLength.GetSeconds());
             break;
 
         default:
@@ -356,6 +365,13 @@ IntervalRateCollector::NewInterval()
         case IntervalRateCollector::OUTPUT_TYPE_AVERAGE_PER_SAMPLE: {
             // This may produce -nan if number of sample is zero.
             const double ratio = sum / static_cast<double>(m_intervalNumOfSamples);
+            m_outputWithTime(time, ratio);
+            m_outputWithoutTime(ratio);
+            break;
+        }
+
+        case IntervalRateCollector::OUTPUT_TYPE_AVERAGE_PER_SECOND: {
+            const double ratio = sum / m_intervalLength.GetSeconds();
             m_outputWithTime(time, ratio);
             m_outputWithoutTime(ratio);
             break;
