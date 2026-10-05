@@ -37,7 +37,7 @@
 #include <sstream>
 #include <stdio.h>
 #include <string>
-#include <sys/stat.h>
+#include <filesystem>
 
 NS_LOG_COMPONENT_DEFINE("StatsHelper");
 
@@ -347,16 +347,8 @@ StatsHelper::GetOutputPath() const
 bool // static
 StatsHelper::IsValidDirectory(std::string path)
 {
-    struct stat st;
-    bool validDirectory = false;
-
-    if (stat(path.c_str(), &st) == 0)
-    {
-        if (st.st_mode && S_IFDIR != 0)
-        {
-            validDirectory = true;
-        }
-    }
+    std::error_code error;
+    const bool validDirectory = std::filesystem::is_directory(path, error);
 
     NS_LOG_INFO("StatsHelper::IsValidDirectory - " << path << " validity: " << validDirectory);
 
@@ -368,16 +360,11 @@ StatsHelper::SetOutputPath(std::string outputPath)
 {
     if (!IsValidDirectory(outputPath))
     {
-        mode_t nMode = 0777; // UNIX permissions
-        int nError = 0;
-#if defined(_WIN32)
-        nError = _mkdir(outputPath.c_str()); // Windows
-#else
-        nError = mkdir(outputPath.c_str(), nMode); // non-Windows
-#endif
-        if (nError != 0)
+        std::error_code error;
+        std::filesystem::create_directory(outputPath, error);
+        if (error)
         {
-            NS_FATAL_ERROR("Directory " << outputPath << " could not be created.");
+            NS_FATAL_ERROR("Directory " << outputPath << " could not be created: " << error.message());
         }
     }
     m_outputPath = outputPath;
