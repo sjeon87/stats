@@ -159,7 +159,7 @@ class StatsAppDelayHelper : public StatsDelayHelper
      * @param helper Pointer to the delay statistics collector helper
      * @param identifier Identifier used to group statistics.
      * @param packet the received packet, expected to have been tagged with
-     *               TrafficTimeTag.
+     *               an application timestamp byte tag.
      * @param from the InetSocketAddress of the sender of the packet.
      */
     static void RxCallback(Ptr<StatsAppDelayHelper> helper,
@@ -172,7 +172,7 @@ class StatsAppDelayHelper : public StatsDelayHelper
      *        to forward the inputs to.
      * @param helper Pointer to the delay statistics collector helper
      * @param identifier Identifier used to group statistics.
-     * @param packet the sent packet, yo which TrafficTimeTag will be attached.
+     * @param packet The sent packet, to which an application timestamp byte tag will be attached.
      */
     static void TxCallback(Ptr<StatsAppDelayHelper> helper, Ptr<const Packet> packet);
 

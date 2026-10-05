@@ -42,7 +42,7 @@
 #include "ns3/scalar-collector.h"
 #include "ns3/singleton.h"
 #include "ns3/string.h"
-#include "ns3/traffic-time-tag.h"
+#include "ns3/timestamp-tag.h"
 #include "ns3/unit-conversion-collector.h"
 
 #include <sstream>
@@ -52,6 +52,44 @@ NS_LOG_COMPONENT_DEFINE("StatsDelayHelper");
 
 namespace ns3
 {
+
+namespace
+{
+/**
+ * @ingroup magister-stats
+ * @internal
+ * Timestamp byte tag for application statistics.
+ * @endinternal
+ */
+class StatsAppTimeTag : public TimestampTag
+{
+  public:
+    /** @return The tag type identifier. */
+    static TypeId GetTypeId()
+    {
+        static TypeId tid = TypeId("ns3::StatsAppTimeTag")
+                                .SetParent<TimestampTag>()
+                                .SetGroupName("Stats")
+                                .AddConstructor<StatsAppTimeTag>();
+        return tid;
+    }
+
+    TypeId GetInstanceTypeId() const override
+    {
+        return GetTypeId();
+    }
+
+    StatsAppTimeTag() = default;
+
+    /** @param timestamp Application transmission time. */
+    explicit StatsAppTimeTag(Time timestamp)
+        : TimestampTag(timestamp)
+    {
+    }
+};
+
+NS_OBJECT_ENSURE_REGISTERED(StatsAppTimeTag);
+} // namespace
 
 NS_OBJECT_ENSURE_REGISTERED(StatsDelayHelper);
 
@@ -639,13 +677,13 @@ StatsAppDelayHelper::RxCallback(Ptr<StatsAppDelayHelper> helper,
     {
         ByteTagIterator::Item item = it.Next();
 
-        if (item.GetTypeId() == TrafficTimeTag::GetTypeId())
+        if (item.GetTypeId() == StatsAppTimeTag::GetTypeId())
         {
-            NS_LOG_DEBUG("Contains a TrafficTimeTag tag:" << " start=" << item.GetStart()
-                                                          << " end=" << item.GetEnd());
-            TrafficTimeTag timeTag;
+            NS_LOG_DEBUG("Contains a StatsAppTimeTag tag:" << " start=" << item.GetStart()
+                                                           << " end=" << item.GetEnd());
+            StatsAppTimeTag timeTag;
             item.GetTag(timeTag);
-            const Time delay = Simulator::Now() - timeTag.GetSenderTimestamp();
+            const Time delay = Simulator::Now() - timeTag.GetTimestamp();
             helper->PassSampleToCollector(delay, identifier);
             isTagged = true; // this will exit the while loop.
         }
@@ -653,16 +691,17 @@ StatsAppDelayHelper::RxCallback(Ptr<StatsAppDelayHelper> helper,
 
     if (!isTagged)
     {
-        NS_LOG_WARN("Discarding a packet of " << packet->GetSize() << " from statistics collection"
-                                              << " because it does not contain any TrafficTimeTag");
+        NS_LOG_WARN("Discarding a packet of "
+                    << packet->GetSize() << " from statistics collection"
+                    << " because it does not contain any StatsAppTimeTag");
     }
 
     /*
-    TrafficTimeTag timeTag;
+    StatsAppTimeTag timeTag;
     if (packet->PeekPacketTag (timeTag))
       {
-        NS_LOG_DEBUG ("Contains a TrafficTimeTag tag");
-        const Time delay = Simulator::Now () - timeTag.GetSenderTimestamp ();
+        NS_LOG_DEBUG ("Contains a StatsAppTimeTag tag");
+        const Time delay = Simulator::Now () - timeTag.GetTimestamp ();
         helper->PassSampleToCollector (delay, identifier);
       }
     else
@@ -670,7 +709,7 @@ StatsAppDelayHelper::RxCallback(Ptr<StatsAppDelayHelper> helper,
         NS_LOG_WARN ("Discarding a packet of " << packet->GetSize ()
                                                << " from statistics collection"
                                                << " because it does not contain any
-    TrafficTimeTag");
+    StatsAppTimeTag");
       }
       */
 }
@@ -680,9 +719,9 @@ StatsAppDelayHelper::TxCallback(Ptr<StatsAppDelayHelper> helper, Ptr<const Packe
 {
     NS_LOG_FUNCTION(helper << packet << packet->GetSize());
 
-    TrafficTimeTag timeTag(Simulator::Now());
+    StatsAppTimeTag timeTag(Simulator::Now());
     packet->AddByteTag(timeTag);
-    NS_LOG_INFO(helper << " attached TrafficTimeTag to packet " << packet << " of size "
+    NS_LOG_INFO(helper << " attached StatsAppTimeTag to packet " << packet << " of size "
                        << packet->GetSize());
 }
 
